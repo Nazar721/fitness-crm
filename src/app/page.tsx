@@ -31,7 +31,7 @@ const badgeDefinitions = [
   { 
     id: "first_1000", 
     icon: "🏋️", 
-    name: "Перша тисяча", 
+    name: "Першa тисяча", 
     target: 1000, 
     description: "Набери 1000 XP",
     hint: "Заробляй XP за тренування, місії та досягнення",
