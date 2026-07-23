@@ -224,63 +224,6 @@ export async function listBackupFiles(dirHandle?: FileSystemDirectoryHandle): Pr
   }
 }
 
-// ===== Scheduled backup timer =====
-
-let backupTimer: ReturnType<typeof setInterval> | null = null;
-let lastCheckedMinute = "";
-
-export function startBackupScheduler(): void {
-  stopBackupScheduler();
-  
-  // Check every 30 seconds if it's time to backup
-  backupTimer = setInterval(async () => {
-    const settings = getBackupSettings();
-    if (!settings.enabled) return;
-
-    const now = new Date();
-    const currentMinute = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-    
-    // Only trigger once per minute
-    if (currentMinute === lastCheckedMinute) return;
-    lastCheckedMinute = currentMinute;
-
-    if (currentMinute === settings.backupTime) {
-      console.log("[Backup] Auto-backup triggered at", currentMinute);
-      await createBackup();
-    }
-  }, 30000);
-  
-  // Also check immediately on start
-  checkAndBackupNow();
-}
-
-export function stopBackupScheduler(): void {
-  if (backupTimer) {
-    clearInterval(backupTimer);
-    backupTimer = null;
-  }
-}
-
-async function checkAndBackupNow(): Promise<void> {
-  const settings = getBackupSettings();
-  if (!settings.enabled) return;
-
-  const now = new Date();
-  const currentMinute = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-  
-  // Check if we should backup now (within 1 minute of scheduled time)
-  if (currentMinute === settings.backupTime) {
-    // Check if we already backed up today
-    const lastBackup = settings.lastBackupTime ? new Date(settings.lastBackupTime) : null;
-    const today = now.toISOString().split("T")[0];
-    
-    if (!lastBackup || lastBackup.toISOString().split("T")[0] !== today) {
-      console.log("[Backup] Running missed backup for today");
-      await createBackup();
-    }
-  }
-}
-
 // ===== Restore from backup =====
 
 export async function restoreFromFile(file: File): Promise<{ success: boolean; message: string }> {

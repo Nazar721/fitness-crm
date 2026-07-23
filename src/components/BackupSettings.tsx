@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/Card";
 import { motion } from "framer-motion";
 import {
   FolderOpen,
-  Clock,
-  Database,
   Trash2,
   Check,
   AlertTriangle,
@@ -14,7 +12,6 @@ import {
   RefreshCw,
   Snowflake,
   HardDrive,
-  Info,
 } from "lucide-react";
 import {
   getBackupSettings,
@@ -24,7 +21,6 @@ import {
   clearBackupFolder,
   createBackup,
   listBackupFiles,
-  startBackupScheduler,
   isFileSystemAccessSupported,
   type BackupSettings as BackupSettingsType,
   type BackupFileInfo,
@@ -48,7 +44,7 @@ export function BackupSettings() {
     const s = getBackupSettings();
     setSettings(s);
     setApiSupported(isFileSystemAccessSupported());
-    
+
     getBackupFolder().then(handle => {
       if (handle) {
         setFolderSet(true);
@@ -57,10 +53,6 @@ export function BackupSettings() {
       }
       setLoading(false);
     });
-
-    if (s.enabled) {
-      startBackupScheduler();
-    }
   }, []);
 
   const handleSelectFolder = async () => {
@@ -78,28 +70,6 @@ export function BackupSettings() {
     setFolderSet(false);
     setFolderName(null);
     setBackups([]);
-  };
-
-  const handleToggle = (enabled: boolean) => {
-    const newSettings = { ...settings, enabled };
-    setSettings(newSettings);
-    saveBackupSettings(newSettings);
-    if (enabled) {
-      startBackupScheduler();
-    }
-  };
-
-  const handleTimeChange = (time: string) => {
-    const newSettings = { ...settings, backupTime: time };
-    setSettings(newSettings);
-    saveBackupSettings(newSettings);
-  };
-
-  const handleMaxBackupsChange = (max: number) => {
-    const clamped = Math.max(1, Math.min(100, max));
-    const newSettings = { ...settings, maxBackups: clamped };
-    setSettings(newSettings);
-    saveBackupSettings(newSettings);
   };
 
   const handleCreateBackup = async () => {
@@ -136,7 +106,7 @@ export function BackupSettings() {
         <div className="p-2 rounded-xl bg-blue-400/10">
           <HardDrive className="w-4 h-4 text-blue-400" />
         </div>
-        Автоматичне резервне копіювання
+        Резервне копіювання
       </h3>
 
       {!apiSupported ? (
@@ -185,78 +155,6 @@ export function BackupSettings() {
               </div>
             </div>
           </div>
-
-          {/* Auto Backup Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] mb-3">
-            <div className="flex items-center gap-3">
-              <RefreshCw className={`w-4 h-4 ${settings.enabled ? 'text-lime' : 'text-gray-500'}`} />
-              <div>
-                <p className="text-sm text-white font-medium">Щоденне резервне копіювання</p>
-                <p className="text-[10px] text-gray-500">Створювати копію автоматично</p>
-              </div>
-            </div>
-            <button
-              onClick={() => handleToggle(!settings.enabled)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${
-                settings.enabled ? 'bg-lime' : 'bg-white/10'
-              }`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                settings.enabled ? 'left-6' : 'left-1'
-              }`} />
-            </button>
-          </div>
-
-          {/* Time & Max Backups */}
-          {settings.enabled && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="space-y-3 mb-4"
-            >
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03]">
-                <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-electric" />
-                  <span className="text-sm text-gray-300">Час резервного копіювання</span>
-                </div>
-                <input
-                  type="time"
-                  value={settings.backupTime}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className="bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:border-lime [color-scheme:dark]"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03]">
-                <div className="flex items-center gap-3">
-                  <Database className="w-4 h-4 text-purple-400" />
-                  <span className="text-sm text-gray-300">Макс. кількість копій</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleMaxBackupsChange(settings.maxBackups - 5)}
-                    className="w-7 h-7 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all text-sm font-medium"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center text-sm font-bold text-white">{settings.maxBackups}</span>
-                  <button
-                    onClick={() => handleMaxBackupsChange(settings.maxBackups + 5)}
-                    className="w-7 h-7 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all text-sm font-medium"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-electric/5">
-                <Info className="w-3.5 h-3.5 text-electric flex-shrink-0 mt-0.5" />
-                <p className="text-[10px] text-gray-400">
-                  Автоматичне копіювання працює поки відкрита сторінка. При перевищенні ліміту найстаріші копії видаляються автоматично.
-                </p>
-              </div>
-            </motion.div>
-          )}
 
           {/* Manual Backup Button */}
           <button
