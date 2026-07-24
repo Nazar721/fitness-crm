@@ -242,6 +242,7 @@ export interface UserWorkoutTemplate {
     exerciseName: string;
     sets: number;
     reps: number;
+    weight?: number; // default weight in kg
   }[];
   createdAt: string;
 }

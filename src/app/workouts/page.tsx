@@ -13,7 +13,7 @@ import {
   BookOpen,
   X,
   Trash2,
-  Copy,
+  Play,
   LayoutTemplate,
 } from "lucide-react";
 import Link from "next/link";
@@ -44,6 +44,7 @@ interface TemplateExercise {
   exerciseId: string;
   sets: number;
   reps: number;
+  weight: number;
 }
 
 export default function WorkoutsPage() {
@@ -73,6 +74,7 @@ export default function WorkoutsPage() {
         exerciseName: ex?.nameUk || ex?.name || te.exerciseId,
         sets: te.sets,
         reps: te.reps,
+        weight: te.weight || undefined,
       };
     });
 
@@ -91,11 +93,12 @@ export default function WorkoutsPage() {
   const handleUseTemplate = (template: UserWorkoutTemplate) => {
     // Save template exercises to session storage for the new workout page
     sessionStorage.setItem("template_exercises", JSON.stringify(template.exercises));
+    sessionStorage.setItem("template_name", template.name);
     router.push("/workouts/new?from_template=true");
   };
 
   const addExerciseToTemplate = (exerciseId: string) => {
-    setTemplateExercises([...templateExercises, { exerciseId, sets: 3, reps: 10 }]);
+    setTemplateExercises([...templateExercises, { exerciseId, sets: 3, reps: 10, weight: 0 }]);
     setShowExercisePicker(false);
   };
 
@@ -103,9 +106,9 @@ export default function WorkoutsPage() {
     setTemplateExercises(templateExercises.filter((_, i) => i !== index));
   };
 
-  const updateTemplateExercise = (index: number, field: "sets" | "reps", value: number) => {
+  const updateTemplateExercise = (index: number, field: "sets" | "reps" | "weight", value: number) => {
     const updated = [...templateExercises];
-    updated[index] = { ...updated[index], [field]: Math.max(1, value) };
+    updated[index] = { ...updated[index], [field]: field === "weight" ? Math.max(0, value) : Math.max(1, value) };
     setTemplateExercises(updated);
   };
 
@@ -207,10 +210,10 @@ export default function WorkoutsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleUseTemplate(template)}
-                      className="p-2 rounded-lg bg-lime/10 text-lime hover:bg-lime/20 transition-colors"
-                      title="Використати"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime text-black text-xs font-medium hover:bg-lime/80 transition-colors"
                     >
-                      <Copy className="w-4 h-4" />
+                      <Play className="w-3.5 h-3.5" fill="currentColor" />
+                      Тренуватися
                     </button>
                     <button
                       onClick={() => handleDeleteTemplate(template.id)}
@@ -224,7 +227,7 @@ export default function WorkoutsPage() {
                 <div className="flex flex-wrap gap-1 mt-2">
                   {template.exercises.map((te, i) => (
                     <span key={i} className="text-[10px] bg-white/[0.05] text-gray-400 px-1.5 py-0.5 rounded">
-                      {te.exerciseName} ({te.sets}x{te.reps})
+                      {te.exerciseName} ({te.sets}x{te.reps}{te.weight ? ` ${te.weight}кг` : ''})
                     </span>
                   ))}
                 </div>
@@ -320,6 +323,18 @@ export default function WorkoutsPage() {
                             min="1"
                             className="w-16 bg-gray-700 rounded px-2 py-1 text-center text-white text-sm focus:outline-none focus:ring-1 focus:ring-lime"
                           />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Вага:</span>
+                          <input
+                            type="number"
+                            value={te.weight || ""}
+                            onChange={(e) => updateTemplateExercise(index, "weight", Number(e.target.value))}
+                            min="0"
+                            placeholder="0"
+                            className="w-16 bg-gray-700 rounded px-2 py-1 text-center text-white text-sm focus:outline-none focus:ring-1 focus:ring-lime"
+                          />
+                          <span className="text-xs text-gray-500">кг</span>
                         </div>
                       </div>
                     </div>

@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Card } from "@/components/ui/Card";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Plus, 
-  Search, 
-  X, 
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  X,
   Check,
   Clock,
   Dumbbell,
   Trash2
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { exercises } from "@/lib/exercises";
 import { getMuscleGroupLabel } from "@/lib/utils";
 import { Exercise, Set, Workout } from "@/types";
@@ -25,14 +25,57 @@ interface WorkoutExercise {
   sets: Set[];
 }
 
-export default function NewWorkoutPage() {
+function NewWorkoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromTemplate = searchParams.get("from_template") === "true";
   const [workoutName, setWorkoutName] = useState("");
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Load exercises from template on mount
+  useEffect(() => {
+    if (fromTemplate) {
+      const templateData = sessionStorage.getItem("template_exercises");
+      const templateName = sessionStorage.getItem("template_name");
+      if (templateData) {
+        try {
+          const templateExercises = JSON.parse(templateData);
+          const loadedExercises: WorkoutExercise[] = templateExercises
+            .map((te: any) => {
+              const exercise = exercises.find(e => e.id === te.exerciseId);
+              if (!exercise) return null;
+
+              const sets: Set[] = [];
+              for (let i = 0; i < te.sets; i++) {
+                sets.push({
+                  id: `set-${Date.now()}-${i}`,
+                  type: "working",
+                  weight: te.weight || 0,
+                  reps: te.reps || 10,
+                  isCompleted: false,
+                });
+              }
+
+              return { exercise, sets };
+            })
+            .filter(Boolean);
+
+          setWorkoutExercises(loadedExercises);
+          if (templateName) {
+            setWorkoutName(templateName);
+          }
+          sessionStorage.removeItem("template_exercises");
+          sessionStorage.removeItem("template_name");
+        } catch (e) {
+          console.error("Failed to load template:", e);
+        }
+      }
+    }
+  }, [fromTemplate]);
 
   const filteredExercises = exercises.filter((exercise) =>
     exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -420,5 +463,17 @@ export default function NewWorkoutPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function NewWorkoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black p-4 flex items-center justify-center">
+        <div className="text-gray-400">Завантаження...</div>
+      </div>
+    }>
+      <NewWorkoutContent />
+    </Suspense>
   );
 }
