@@ -20,7 +20,6 @@ import {
   Trash2
 } from "lucide-react";
 import { getProfile, saveProfile, exportAllData, importAllData, downloadJSON, parseImportJSON, clearAllData, getProgress } from "@/lib/storage";
-import { BackupSettings } from "@/components/BackupSettings";
 import { formatWeight, getFitnessLevelFromXP, getFitnessLevelLabel } from "@/lib/utils";
 import { UserProfile } from "@/types";
 
@@ -647,11 +646,6 @@ export default function ProfilePage() {
             </div>
           )}
         </Card>
-      </motion.div>
-
-      {/* Backup Settings */}
-      <motion.div variants={item}>
-        <BackupSettings />
       </motion.div>
 
       {/* Settings & Export/Import */}

@@ -1,4 +1,4 @@
-import { Workout, UserProfile, UserProgress, Measurement, Injury, PersonalRecord, Badge, BodyRecord, BodyRecordExercise, BodyRecordHistory, BodyRecordEntry } from "@/types";
+import { Workout, UserProfile, UserProgress, Measurement, Injury, PersonalRecord, Badge, BodyRecord, BodyRecordExercise, BodyRecordHistory, BodyRecordEntry, UserWorkoutTemplate } from "@/types";
 import { getBodyRecordLabel } from "@/lib/utils";
 
 const STORAGE_KEYS = {
@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   BADGES: "fittrack_badges",
   BODY_RECORDS: "fittrack_body_records",
   BODY_RECORDS_HISTORY: "fittrack_body_records_history",
+  USER_TEMPLATES: "fittrack_user_templates",
 } as const;
 
 // ===== Generic helpers =====
@@ -310,6 +311,11 @@ export function getRecentWorkouts(limit: number = 3): Workout[] {
     .slice(0, limit);
 }
 
+export function getTodayWorkouts(): Workout[] {
+  const today = new Date().toISOString().split("T")[0];
+  return getWorkouts().filter(w => w.date === today);
+}
+
 export function getTotalStats() {
   const workouts = getWorkouts();
   return {
@@ -445,6 +451,34 @@ export function getRecentPRs(limit: number = 5) {
   return prs
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit);
+}
+
+// ===== User Workout Templates =====
+
+export function getUserTemplates(): UserWorkoutTemplate[] {
+  return get<UserWorkoutTemplate[]>(STORAGE_KEYS.USER_TEMPLATES, []);
+}
+
+export function saveUserTemplate(template: Omit<UserWorkoutTemplate, "id" | "createdAt">): UserWorkoutTemplate {
+  const templates = getUserTemplates();
+  const newTemplate: UserWorkoutTemplate = {
+    ...template,
+    id: `tpl-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+  };
+  templates.unshift(newTemplate);
+  set(STORAGE_KEYS.USER_TEMPLATES, templates);
+  return newTemplate;
+}
+
+export function deleteUserTemplate(id: string): void {
+  const templates = getUserTemplates().filter(t => t.id !== id);
+  set(STORAGE_KEYS.USER_TEMPLATES, templates);
+}
+
+export function updateUserTemplate(id: string, updates: Partial<UserWorkoutTemplate>): void {
+  const templates = getUserTemplates().map(t => t.id === id ? { ...t, ...updates } : t);
+  set(STORAGE_KEYS.USER_TEMPLATES, templates);
 }
 
 // ===== Clear all data =====

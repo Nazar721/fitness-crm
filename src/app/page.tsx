@@ -25,7 +25,7 @@ import {
   Repeat,
 } from "lucide-react";
 import { formatWeight, formatDuration, getLevelFromXP, getLevelLabel } from "@/lib/utils";
-import { getProfile, getProgress, getRecentWorkouts, getWorkoutCountThisWeek, getTotalStats } from "@/lib/storage";
+import { getProfile, getProgress, getRecentWorkouts, getWorkoutCountThisWeek, getTotalStats, getTodayWorkouts } from "@/lib/storage";
 
 const badgeDefinitions = [
   { 
@@ -111,41 +111,83 @@ const badgeDefinitions = [
   },
 ];
 
-const defaultMissions = [
-  { 
-    id: 1, 
-    title: "Виконай 5 підходів на грудях", 
-    description: "Зроби 5 підходів будь-якої вправи на груди",
-    xp: 25, 
-    completed: false,
+// Генеруємо динамічні місії на основі вправ, які вже додані в базу
+function getDynamicMissions(todayWorkouts: any[]) {
+  const missions: Array<{
+    id: number;
+    title: string;
+    description: string;
+    xp: number;
+    completed: boolean;
+    icon: any;
+    progress: number;
+    target: number;
+    category: "workout" | "streak";
+  }> = [];
+
+  // Збираємо всі унікальні exerciseId з сьогоднішніх тренувань
+  const exerciseIds = new Set<string>();
+  let totalSetsToday = 0;
+  let totalRepsToday = 0;
+  let totalDurationToday = 0;
+
+  todayWorkouts.forEach((w) => {
+    totalDurationToday += w.duration || 0;
+    (w.exercises || []).forEach((we: any) => {
+      exerciseIds.add(we.exerciseId);
+      (we.sets || []).forEach((s: any) => {
+        if (s.isCompleted) {
+          totalSetsToday++;
+          totalRepsToday += s.reps || 0;
+        }
+      });
+    });
+  });
+
+  // Місія 1: Зроби N підходів (динамічна ціль)
+  const setsTarget = Math.max(5, totalSetsToday + 5);
+  missions.push({
+    id: 1,
+    title: `Виконай ${setsTarget} підходів`,
+    description: "Зроби підходи будь-яких вправ",
+    xp: 25,
+    completed: totalSetsToday >= setsTarget,
     icon: DumbbellIcon2,
-    progress: 0,
-    target: 5,
-    category: "workout" as const,
-  },
-  { 
-    id: 2, 
-    title: "Зроби 100 віджимань", 
-    description: "Набери сумарно 100 віджимань за день",
-    xp: 30, 
-    completed: false,
+    progress: totalSetsToday,
+    target: setsTarget,
+    category: "workout",
+  });
+
+  // Місія 2: Використай різні вправи (залежить від кількості доданих)
+    const uniqueExercisesTarget = Math.min(exerciseIds.size + 1, 5);
+  missions.push({
+    id: 2,
+    title: `Використай ${uniqueExercisesTarget} різних вправ`,
+    description: "Різноманітність тренувань",
+    xp: 30,
+    completed: exerciseIds.size >= uniqueExercisesTarget,
     icon: Repeat,
-    progress: 0,
-    target: 100,
-    category: "workout" as const,
-  },
-  { 
-    id: 3, 
-    title: "Протягни 10 хвилин", 
-    description: "Протримайся в планці або статиці 10 хвилин",
-    xp: 20, 
-    completed: false,
+    progress: exerciseIds.size,
+    target: uniqueExercisesTarget,
+    category: "workout",
+  });
+
+  // Місія 3: Тренуйся хвилин (динамічна)
+  const durationTarget = Math.max(10, totalDurationToday + 10);
+  missions.push({
+    id: 3,
+    title: `Тренуйся ${durationTarget} хвилин`,
+    description: "Загальний час тренування",
+    xp: 20,
+    completed: totalDurationToday >= durationTarget,
     icon: TimerIcon,
-    progress: 0,
-    target: 10,
-    category: "streak" as const,
-  },
-];
+    progress: totalDurationToday,
+    target: durationTarget,
+    category: "streak",
+  });
+
+  return missions;
+}
 
 const container = {
   hidden: { opacity: 0 },
@@ -172,6 +214,7 @@ export default function DashboardPage() {
   const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
   const [totalStats, setTotalStats] = useState({ totalWorkouts: 0, totalVolume: 0 });
   const [weeklyGoal, setWeeklyGoal] = useState(4);
+  const [todayWorkouts, setTodayWorkouts] = useState<any[]>([]);
 
   useEffect(() => {
     const p = getProfile();
@@ -179,6 +222,7 @@ export default function DashboardPage() {
     const rw = getRecentWorkouts(3);
     const ww = getWorkoutCountThisWeek();
     const ts = getTotalStats();
+    const tw = getTodayWorkouts();
 
     setProfile(p);
     setProgress(pr);
@@ -186,6 +230,7 @@ export default function DashboardPage() {
     setWorkoutsThisWeek(ww);
     setTotalStats(ts);
     setWeeklyGoal(pr?.weeklyGoal || 4);
+    setTodayWorkouts(tw);
     setLoading(false);
   }, []);
 
@@ -381,11 +426,11 @@ export default function DashboardPage() {
                 </div>
                 Добові місії
                 <span className="ml-auto text-[10px] text-gray-500 font-normal">
-                  {defaultMissions.filter(m => m.completed).length}/{defaultMissions.length}
+                  {getDynamicMissions(todayWorkouts).filter(m => m.completed).length}/{getDynamicMissions(todayWorkouts).length}
                 </span>
               </h3>
               <div className="space-y-2">
-                {defaultMissions.map((mission) => {
+                {getDynamicMissions(todayWorkouts).map((mission) => {
                   const MissionIcon = mission.icon;
                   const progress = mission.progress / mission.target;
                   const isComplete = mission.completed;

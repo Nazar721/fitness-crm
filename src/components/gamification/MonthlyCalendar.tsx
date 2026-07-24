@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, Snowflake, Flame, Check, X } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Snowflake, Flame, Check, X, Minus } from "lucide-react";
 import { getWorkouts } from "@/lib/storage";
 
 interface MonthlyCalendarProps {
@@ -15,7 +15,9 @@ interface DayStatus {
   day: number;
   date: Date;
   hasWorkout: boolean;
-  isFrozen: boolean;
+  isRestDay: boolean;     // Тиждень виконаний, цей день — відпочинок
+  isFrozen: boolean;      // Тиждень НЕ виконаний, заморожено
+  isMissed: boolean;      // Тиждень НЕ виконаний, пропущено (ламає streak)
   isToday: boolean;
   isPast: boolean;
   isFuture: boolean;
@@ -43,40 +45,55 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
 
   const days: DayStatus[] = useMemo(() => {
     const result: DayStatus[] = [];
-    
+
+    // Спочатку рахуємо скільки заморозок ми вже "витратили" в попередніх тижнях
+    // (щоб правильно розподілити заморожені/пропущені дні)
+    let freezesLeft = freezes;
+
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const dateStr = date.toISOString().split("T")[0];
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < today && !isToday;
       const isFuture = date > today;
-      
+
       let hasWorkout = workoutDates.has(dateStr);
-      
-      // Calculate frozen days - if a day in the past didn't have a workout
-      // and we haven't met the weekly goal, it could be frozen
+
+      let isRestDay = false;
       let isFrozen = false;
+      let isMissed = false;
+
       if (isPast && !hasWorkout) {
-        // Check if this day's week had fewer workouts than goal
+        // Знаходимо початок тижня (понеділок)
         const weekStart = new Date(date);
         weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
-        
+
+        // Рахуємо тренування за цей тиждень
         const workoutsInWeek = workouts.filter(w => {
           const wd = new Date(w.date);
           return wd >= weekStart && wd <= weekEnd;
         }).length;
-        
-        if (workoutsInWeek < weeklyGoal) {
-          isFrozen = true; // This day would be frozen
+
+        if (workoutsInWeek >= weeklyGoal) {
+          // Тиждень виконаний — це день відпочинку
+          isRestDay = true;
+        } else {
+          // Тиждень НЕ виконаний — вирішуємо заморозка чи пропуск
+          if (freezesLeft > 0) {
+            isFrozen = true;
+            freezesLeft--;
+          } else {
+            isMissed = true;
+          }
         }
       }
-      
-      result.push({ day: d, date, hasWorkout, isFrozen, isToday, isPast, isFuture });
+
+      result.push({ day: d, date, hasWorkout, isRestDay, isFrozen, isMissed, isToday, isPast, isFuture });
     }
     return result;
-  }, [year, month, daysInMonth, workoutDates, weeklyGoal, workouts]);
+  }, [year, month, daysInMonth, workoutDates, weeklyGoal, workouts, freezes]);
 
   const monthNames = [
     "Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень",
@@ -86,7 +103,8 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
   const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
   const workoutDays = days.filter(d => d.hasWorkout).length;
-  const frozenDays = days.filter(d => d.isFrozen && d.isPast).length;
+  const frozenDays = days.filter(d => d.isFrozen).length;
+  const missedDays = days.filter(d => d.isMissed).length;
 
   const prevMonth = () => {
     setCurrentMonth(new Date(year, month - 1, 1));
@@ -102,7 +120,9 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
     if (day.isFuture) return "opacity-30";
     if (day.hasWorkout) return "bg-lime/20 border-lime/40 text-lime shadow-sm shadow-lime/10";
     if (day.isFrozen) return "bg-blue-500/10 border-blue-400/30 text-blue-400";
+    if (day.isRestDay) return "bg-white/[0.03] border-white/[0.06] text-gray-500";
     if (day.isToday) return "bg-white/10 border-white/20 text-white ring-2 ring-lime/30";
+    if (day.isMissed) return "bg-red-500/5 border-red-400/20 text-red-400/60";
     if (day.isPast) return "bg-white/[0.03] border-white/[0.06] text-gray-600";
     return "bg-white/[0.02] border-white/[0.04] text-gray-500";
   };
@@ -161,8 +181,14 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
             {day.hasWorkout && (
               <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-lime rounded-full" />
             )}
-            {day.isFrozen && day.isPast && !day.hasWorkout && (
+            {day.isFrozen && (
               <Snowflake className="absolute w-2.5 h-2.5 text-blue-400 -top-0.5 -right-0.5" />
+            )}
+            {day.isRestDay && day.isPast && (
+              <Minus className="absolute w-2 h-2 text-gray-600 -top-0.5 -right-0.5" />
+            )}
+            {day.isMissed && (
+              <X className="absolute w-2 h-2 text-red-400/60 -top-0.5 -right-0.5" />
             )}
           </motion.button>
         ))}
@@ -193,10 +219,20 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
                       <Check className="w-3.5 h-3.5 text-lime" />
                       <span className="text-xs text-lime font-medium">Тренування</span>
                     </div>
-                  ) : selectedDay.isFrozen && selectedDay.isPast ? (
+                  ) : selectedDay.isFrozen ? (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-400/10">
                       <Snowflake className="w-3.5 h-3.5 text-blue-400" />
                       <span className="text-xs text-blue-300 font-medium">Заморожено</span>
+                    </div>
+                  ) : selectedDay.isRestDay ? (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5">
+                      <Minus className="w-3.5 h-3.5 text-gray-500" />
+                      <span className="text-xs text-gray-400 font-medium">Відпочинок</span>
+                    </div>
+                  ) : selectedDay.isMissed ? (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-400/10">
+                      <X className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-xs text-red-300 font-medium">Пропущено</span>
                     </div>
                   ) : selectedDay.isFuture ? (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5">
@@ -204,9 +240,9 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
                       <span className="text-xs text-gray-500 font-medium">Майбутнє</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-400/10">
-                      <X className="w-3.5 h-3.5 text-red-400" />
-                      <span className="text-xs text-red-300 font-medium">Пропущено</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5">
+                      <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                      <span className="text-xs text-gray-500 font-medium">—</span>
                     </div>
                   )}
                 </div>
@@ -236,7 +272,8 @@ export function MonthlyCalendar({ weeklyGoal, freezes }: MonthlyCalendarProps) {
           <div className="w-2 h-2 rounded-full bg-lime" />
           <div className="w-2 h-2 rounded-full bg-blue-400" />
           <div className="w-2 h-2 rounded-full bg-white/10" />
-          <span className="text-[10px] text-gray-500 ml-1">Тренування / Заморожено / Пропуск</span>
+          <div className="w-2 h-2 rounded-full bg-red-400/40" />
+          <span className="text-[10px] text-gray-500 ml-1">Тренування / Заморожено / Відпочинок / Пропуск</span>
         </div>
       </div>
     </Card>

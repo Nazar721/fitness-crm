@@ -238,11 +238,10 @@ export default function NewWorkoutPage() {
                 </div>
 
                 {/* Sets Header */}
-                <div className="grid grid-cols-5 gap-2 mb-2 text-xs text-gray-500">
+                <div className="grid grid-cols-4 gap-2 mb-2 text-xs text-gray-500">
                   <div className="text-center">Підхід</div>
                   <div className="text-center">Вага (кг)</div>
                   <div className="text-center">Повтори</div>
-                  <div className="text-center">RPE</div>
                   <div className="text-center">✓</div>
                 </div>
 
@@ -251,7 +250,7 @@ export default function NewWorkoutPage() {
                   {workoutExercise.sets.map((set, setIndex) => (
                     <div
                       key={set.id}
-                      className={`grid grid-cols-5 gap-2 items-center p-2 rounded-lg ${
+                      className={`grid grid-cols-4 gap-2 items-center p-2 rounded-lg ${
                         set.isCompleted ? "bg-lime/10" : "bg-gray-800"
                       }`}
                     >
@@ -274,17 +273,6 @@ export default function NewWorkoutPage() {
                           updateSet(exerciseIndex, setIndex, "reps", Number(e.target.value))
                         }
                         placeholder="0"
-                        className="w-full bg-gray-700 rounded px-2 py-1 text-center text-white text-sm focus:outline-none focus:ring-1 focus:ring-lime"
-                      />
-                      <input
-                        type="number"
-                        value={set.rpe || ""}
-                        onChange={(e) =>
-                          updateSet(exerciseIndex, setIndex, "rpe", Number(e.target.value))
-                        }
-                        placeholder="RPE"
-                        min="1"
-                        max="10"
                         className="w-full bg-gray-700 rounded px-2 py-1 text-center text-white text-sm focus:outline-none focus:ring-1 focus:ring-lime"
                       />
                       <div className="flex items-center justify-center gap-1">

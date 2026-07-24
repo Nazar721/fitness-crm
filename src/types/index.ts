@@ -232,3 +232,16 @@ export interface WorkoutTemplate {
     rest?: number; // seconds
   }[];
 }
+
+// User-created workout templates
+export interface UserWorkoutTemplate {
+  id: string;
+  name: string;
+  exercises: {
+    exerciseId: string;
+    exerciseName: string;
+    sets: number;
+    reps: number;
+  }[];
+  createdAt: string;
+}
