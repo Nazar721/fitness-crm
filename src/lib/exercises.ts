@@ -1,5 +1,7 @@
 import { Exercise } from "@/types";
 
+const CUSTOM_EXERCISES_KEY = "fittrack_custom_exercises";
+
 // Базові вправи - автоматично доступні в додатку
 export const BASE_EXERCISES: Exercise[] = [
   // ===== ВІДЖИМАННЯ ВІД ЗЕМЛІ (5) =====
@@ -298,6 +300,7 @@ export const EXTRA_EXERCISES: Exercise[] = [
     difficulty: "beginner",
     type: "strength",
     isUnilateral: false,
+    isTimed: true,
   },
   {
     id: "burpees",
@@ -309,6 +312,7 @@ export const EXTRA_EXERCISES: Exercise[] = [
     difficulty: "intermediate",
     type: "cardio",
     isUnilateral: false,
+    isTimed: true,
   },
   {
     id: "running-outdoor",
@@ -320,11 +324,76 @@ export const EXTRA_EXERCISES: Exercise[] = [
     difficulty: "beginner",
     type: "cardio",
     isUnilateral: false,
+    isTimed: true,
   },
 ];
 
 // Повний список = базові + додані користувачем
 export const exercises: Exercise[] = [...BASE_EXERCISES, ...EXTRA_EXERCISES];
+
+// ===== Custom exercises (user-created) =====
+
+function get<T>(key: string, defaultValue: T): T {
+  if (typeof window === "undefined") return defaultValue;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
+function set<T>(key: string, value: T): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error("Storage error:", error);
+  }
+}
+
+export function getCustomExercises(): Exercise[] {
+  return get<Exercise[]>(CUSTOM_EXERCISES_KEY, []);
+}
+
+export function getAllExercises(): Exercise[] {
+  return [...exercises, ...getCustomExercises()];
+}
+
+export function saveCustomExercise(exercise: Omit<Exercise, "id" | "isCustom">): Exercise {
+  const customExercises = getCustomExercises();
+  const newExercise: Exercise = {
+    ...exercise,
+    id: `custom-${Date.now()}`,
+    isCustom: true,
+  };
+  customExercises.push(newExercise);
+  set(CUSTOM_EXERCISES_KEY, customExercises);
+  return newExercise;
+}
+
+export function deleteCustomExercise(id: string): void {
+  const customExercises = getCustomExercises().filter(e => e.id !== id);
+  set(CUSTOM_EXERCISES_KEY, customExercises);
+}
+
+export function isTimedExercise(exerciseId: string): boolean {
+  const allExercises = getAllExercises();
+  const exercise = allExercises.find(e => e.id === exerciseId);
+  return exercise?.isTimed ?? false;
+}
+
+export function formatDurationShort(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins > 0 && secs > 0) return `${mins}хв ${secs}с`;
+  if (mins > 0) return `${mins}хв`;
+  return `${secs}с`;
+}
+
+export function parseDurationToSeconds(minutes: number, seconds: number = 0): number {
+  return minutes * 60 + seconds;
+}
 
 export function getExercisesByMuscleGroup(muscleGroup: string): Exercise[] {
   return exercises.filter(

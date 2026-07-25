@@ -9,6 +9,8 @@ export interface Exercise {
   difficulty: Difficulty;
   type: ExerciseType;
   isUnilateral: boolean;
+  isTimed?: boolean; // true for exercises measured in time (plank, running, etc.)
+  isCustom?: boolean; // true for user-created exercises
 }
 
 export type MuscleGroup = 
@@ -243,6 +245,8 @@ export interface UserWorkoutTemplate {
     sets: number;
     reps: number;
     weight?: number; // default weight in kg
+    duration?: number; // duration in seconds for timed exercises
+    unit?: "reps" | "seconds"; // whether this exercise uses reps or time
   }[];
   createdAt: string;
 }
