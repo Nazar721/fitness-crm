@@ -38,7 +38,7 @@ function NewWorkoutContent() {
 
   // Custom exercise creation
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
-  const [customExerciseName, setCustomExerciseName] = useState("");
+  // customExerciseName removed - auto-generated from Ukrainian name
   const [customExerciseNameUk, setCustomExerciseNameUk] = useState("");
   const [customExerciseMuscle, setCustomExerciseMuscle] = useState<MuscleGroup>("chest");
   const [customExerciseEquipment, setCustomExerciseEquipment] = useState<Equipment>("bodyweight");
@@ -227,9 +227,9 @@ function NewWorkoutContent() {
   );
 
   const handleCreateCustomExercise = () => {
-    if (!customExerciseName.trim() || !customExerciseNameUk.trim()) return;
+    if (!customExerciseNameUk.trim()) return;
     const newExercise = saveCustomExercise({
-      name: customExerciseName.trim(),
+      name: customExerciseNameUk.trim(),
       nameUk: customExerciseNameUk.trim(),
       primaryMuscle: customExerciseMuscle,
       secondaryMuscles: [],
@@ -239,7 +239,6 @@ function NewWorkoutContent() {
       isUnilateral: false,
       isTimed: customExerciseIsTimed,
     });
-    setCustomExerciseName("");
     setCustomExerciseNameUk("");
     setShowCustomExerciseModal(false);
     // Auto-add the newly created exercise
@@ -596,16 +595,6 @@ function NewWorkoutContent() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Назва англійською *</label>
-                <input
-                  type="text"
-                  placeholder="Напр. Dumbbell Flyes"
-                  value={customExerciseName}
-                  onChange={(e) => setCustomExerciseName(e.target.value)}
-                  className="w-full bg-gray-850 border border-gray-800 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-lime transition-colors"
-                />
-              </div>
-              <div>
                 <label className="text-xs text-gray-500 mb-2 block">М'язова група</label>
                 <div className="flex flex-wrap gap-2">
                   {muscleGroups.map((m) => (
@@ -679,9 +668,9 @@ function NewWorkoutContent() {
               </div>
               <button
                 onClick={handleCreateCustomExercise}
-                disabled={!customExerciseName.trim() || !customExerciseNameUk.trim()}
+                disabled={!customExerciseNameUk.trim()}
                 className={`w-full py-3 rounded-xl font-medium text-sm transition-colors ${
-                  customExerciseName.trim() && customExerciseNameUk.trim()
+                  customExerciseNameUk.trim()
                     ? "bg-lime text-black hover:bg-lime/80"
                     : "bg-white/10 text-gray-600 cursor-not-allowed"
                 }`}

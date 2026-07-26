@@ -159,7 +159,7 @@ export default function RecordsPage() {
                   <motion.div
                     key={exercise.id}
                     layout
-                    className="relative p-4 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.05] transition-all"
+                    className="relative p-4 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.05] transition-all overflow-hidden min-w-0"
                   >
                     {isEditing ? (
                       <div className="flex flex-col gap-3">
