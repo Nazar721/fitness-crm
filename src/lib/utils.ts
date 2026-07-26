@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { BodyRecordExercise, FitnessLevel } from "@/types";
+import { getCustomRecordExercises, CustomRecordExercise } from "@/lib/storage";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -109,7 +110,7 @@ export function getMuscleGroupLabel(group: string): string {
     glutes: "Сідниці",
     calves: "Литки",
     forearms: "Передпліччя",
-    core: "Корпус",
+    core: "Прес",
     cardio: "Кардіо",
     mobility: "Мобільність",
   };
@@ -175,12 +176,19 @@ export function getBodyRecordLabel(exerciseId: BodyRecordExercise): string {
     hanging_leg_raises: "Вис з прямими ногами",
     hanging_crunches: "Скручування на турніку",
   };
-  return labels[exerciseId] || exerciseId;
+  if (labels[exerciseId]) return labels[exerciseId];
+  // Check custom exercises
+  const customExercises = getCustomRecordExercises();
+  const custom = customExercises.find(e => e.id === exerciseId);
+  return custom?.name || exerciseId;
 }
 
 export function getBodyRecordUnit(exerciseId: BodyRecordExercise): "reps" | "seconds" {
-  if (exerciseId === "plank") return "seconds";
-  return "reps";
+  if (exerciseId === "plank" || exerciseId === "hanging_leg_raises") return "seconds";
+  // Check custom exercises
+  const customExercises = getCustomRecordExercises();
+  const custom = customExercises.find(e => e.id === exerciseId);
+  return custom?.unit || "reps";
 }
 
 export function formatBodyRecordValue(value: number, unit: "reps" | "seconds"): string {

@@ -183,7 +183,7 @@ export interface PersonalRecord {
 }
 
 // Bodyweight records for tracking basic exercises
-export type BodyRecordExercise = "pull_ups" | "push_ups" | "dips" | "plank" | "burpees" | "squats" | "sit_ups" | "hanging_leg_raises" | "hanging_crunches";
+export type BodyRecordExercise = "pull_ups" | "push_ups" | "dips" | "plank" | "burpees" | "squats" | "sit_ups" | "hanging_leg_raises" | "hanging_crunches" | (string & {});
 
 export interface BodyRecord {
   exerciseId: BodyRecordExercise;

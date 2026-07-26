@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { motion } from "framer-motion";
 import { Trophy, Plus, Check, X, TrendingUp, TrendingDown, Minus, BarChart3, ChevronDown, ChevronUp, MinusCircle, PlusCircle } from "lucide-react";
-import { 
+import {
   BarChart,
   Bar,
   XAxis,
@@ -14,14 +14,14 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { BodyRecordExercise } from "@/types";
-import { getBodyRecords, updateBodyRecord, getBodyRecordHistory } from "@/lib/storage";
-import { 
-  getBodyRecordLabel, 
-  getBodyRecordUnit, 
-  formatBodyRecordValue 
+import { getBodyRecords, updateBodyRecord, getBodyRecordHistory, getCustomRecordExercises, saveCustomRecordExercise, deleteCustomRecordExercise } from "@/lib/storage";
+import {
+  getBodyRecordLabel,
+  getBodyRecordUnit,
+  formatBodyRecordValue
 } from "@/lib/utils";
 
-const RECORD_EXERCISES: { id: BodyRecordExercise; icon: string }[] = [
+const DEFAULT_RECORD_EXERCISES: { id: BodyRecordExercise; icon: string }[] = [
   { id: "pull_ups", icon: "💪" },
   { id: "push_ups", icon: "🫸" },
   { id: "dips", icon: "🫷" },
@@ -33,11 +33,39 @@ const RECORD_EXERCISES: { id: BodyRecordExercise; icon: string }[] = [
   { id: "hanging_crunches", icon: "🦾" },
 ];
 
+const CUSTOM_ICONS = ["🏋️", "⚡", "💥", "🔥", "💪", "🦵", "🎯", "🧘", "🏃", "🚴"];
+
 export function PersonalRecords() {
   const [records, setRecords] = useState(() => getBodyRecords());
   const [editingId, setEditingId] = useState<BodyRecordExercise | null>(null);
   const [editValue, setEditValue] = useState("");
   const [expandedChart, setExpandedChart] = useState<BodyRecordExercise | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseUnit, setNewExerciseUnit] = useState<"reps" | "seconds">("reps");
+  const [newExerciseIcon, setNewExerciseIcon] = useState("🏋️");
+  const [customExercises, setCustomExercises] = useState(() => getCustomRecordExercises());
+
+  const allRecordExercises = [...DEFAULT_RECORD_EXERCISES, ...customExercises];
+
+  const handleAddCustomExercise = () => {
+    if (!newExerciseName.trim()) return;
+    const id = saveCustomRecordExercise({
+      name: newExerciseName.trim(),
+      unit: newExerciseUnit,
+      icon: newExerciseIcon,
+    });
+    setCustomExercises(getCustomRecordExercises());
+    setNewExerciseName("");
+    setNewExerciseUnit("reps");
+    setNewExerciseIcon("🏋️");
+    setShowAddModal(false);
+  };
+
+  const handleDeleteCustomExercise = (id: string) => {
+    deleteCustomRecordExercise(id);
+    setCustomExercises(getCustomRecordExercises());
+  };
 
   const handleSave = (exerciseId: BodyRecordExercise) => {
     const numValue = parseInt(editValue);
@@ -84,7 +112,7 @@ export function PersonalRecords() {
       </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {RECORD_EXERCISES.map((exercise) => {
+        {allRecordExercises.map((exercise) => {
           const record = records.find(r => r.exerciseId === exercise.id);
           const unit = getBodyRecordUnit(exercise.id);
           const isEditing = editingId === exercise.id;
@@ -120,20 +148,25 @@ export function PersonalRecords() {
                     >
                       <Minus className="w-3 h-3" />
                     </button>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={editValue}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, "");
-                        setEditValue(val);
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && handleSave(exercise.id)}
-                      className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:border-lime/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      placeholder="0"
-                      autoFocus
-                    />
+                    <div className="flex-1 flex items-center justify-center">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={editValue}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, "");
+                          setEditValue(val);
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && handleSave(exercise.id)}
+                        className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:border-lime/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        placeholder="0"
+                        autoFocus
+                      />
+                      <span className="text-[10px] text-gray-500 ml-1 flex-shrink-0">
+                        {unit === "seconds" ? "сек" : "раз"}
+                      </span>
+                    </div>
                     <button
                       onClick={increment}
                       className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all flex-shrink-0"
@@ -250,7 +283,113 @@ export function PersonalRecords() {
             </motion.div>
           );
         })}
+        {/* Add custom exercise button */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowAddModal(true)}
+          className="p-3 rounded-xl border border-dashed border-white/10 hover:border-white/20 flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-gray-400 transition-all min-h-[100px]"
+        >
+          <PlusCircle className="w-5 h-5" />
+          <span className="text-[10px]">Додати вправу</span>
+        </motion.button>
       </div>
+
+      {/* Add Custom Exercise Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm bg-[#1a1a20] rounded-2xl p-4 border border-white/[0.08]"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-white">Нова вправа</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Назва</label>
+                <input
+                  type="text"
+                  value={newExerciseName}
+                  onChange={(e) => setNewExerciseName(e.target.value)}
+                  placeholder="Напр. Підйом ніг"
+                  className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-lime/50"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 mb-2 block">Одиниця виміру</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNewExerciseUnit("reps")}
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+                      newExerciseUnit === "reps"
+                        ? "bg-lime/20 text-lime border border-lime/30"
+                        : "bg-white/5 text-gray-400 border border-white/[0.06]"
+                    }`}
+                  >
+                    Рази (повторення)
+                  </button>
+                  <button
+                    onClick={() => setNewExerciseUnit("seconds")}
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+                      newExerciseUnit === "seconds"
+                        ? "bg-lime/20 text-lime border border-lime/30"
+                        : "bg-white/5 text-gray-400 border border-white/[0.06]"
+                    }`}
+                  >
+                    Секунди (час)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 mb-2 block">Іконка</label>
+                <div className="flex flex-wrap gap-2">
+                  {CUSTOM_ICONS.map((icon) => (
+                    <button
+                      key={icon}
+                      onClick={() => setNewExerciseIcon(icon)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
+                        newExerciseIcon === icon
+                          ? "bg-lime/20 border border-lime/30"
+                          : "bg-white/5 border border-white/[0.06] hover:bg-white/10"
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-medium hover:bg-white/10 transition-colors"
+                >
+                  Скасувати
+                </button>
+                <button
+                  onClick={handleAddCustomExercise}
+                  disabled={!newExerciseName.trim()}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    newExerciseName.trim()
+                      ? "bg-lime text-black hover:bg-lime/80"
+                      : "bg-white/10 text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  Додати
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </Card>
   );
 }

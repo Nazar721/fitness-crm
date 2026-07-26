@@ -11,6 +11,7 @@ const mobileNavItems = [
   { href: "/workouts/new", icon: Plus, label: "Нове", isCenter: true },
   { href: "/records", icon: Trophy, label: "Рекорди" },
   { href: "/progress", icon: TrendingUp, label: "Прогрес" },
+  { href: "/profile", icon: User, label: "Профіль" },
 ];
 
 const desktopNavItems = [
@@ -29,38 +30,38 @@ export function Navigation() {
     <>
       {/* Mobile: Bottom nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="relative max-w-lg mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-around h-16">
+        <div className="relative max-w-lg mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-around h-14">
             {mobileNavItems.map((item) => {
               const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               const Icon = item.icon;
 
               if (item.isCenter) {
                 return (
-                  <Link key={item.href} href={item.href} className="relative -mt-8">
+                  <Link key={item.href} href={item.href} className="relative -mt-6">
                     <motion.div
                       whileTap={{ scale: 0.9 }}
                       whileHover={{ scale: 1.05 }}
-                      className="w-14 h-14 rounded-full bg-gradient-to-br from-lime to-electric flex items-center justify-center"
+                      className="w-12 h-12 rounded-full bg-gradient-to-br from-lime to-electric flex items-center justify-center"
                       style={{ boxShadow: "0 4px 20px rgba(57, 255, 20, 0.4), 0 0 40px rgba(57, 255, 20, 0.2)" }}
                     >
-                      <Plus className="w-7 h-7 text-black" strokeWidth={3} />
+                      <Plus className="w-6 h-6 text-black" strokeWidth={3} />
                     </motion.div>
                   </Link>
                 );
               }
 
               return (
-                <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 py-2 px-3 touch-target">
+                <Link key={item.href} href={item.href} className="flex flex-col items-center gap-0.5 py-1 px-1 touch-target">
                   <motion.div whileTap={{ scale: 0.85 }} className="relative">
-                    <Icon className={`w-6 h-6 transition-all duration-200 ${isActive ? "text-lime" : "text-gray-500"}`} strokeWidth={isActive ? 2.5 : 2} />
+                    <Icon className={`w-5 h-5 transition-all duration-200 ${isActive ? "text-lime" : "text-gray-500"}`} strokeWidth={isActive ? 2.5 : 2} />
                     {isActive && (
-                      <motion.div layoutId="nav-indicator" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-lime rounded-full" style={{ boxShadow: "0 0 8px rgba(57, 255, 20, 0.6)" }} />
+                      <motion.div layoutId="nav-indicator" className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-lime rounded-full" style={{ boxShadow: "0 0 8px rgba(57, 255, 20, 0.6)" }} />
                     )}
                   </motion.div>
-                  <span className={`text-[10px] font-medium transition-colors duration-200 ${isActive ? "text-lime" : "text-gray-500"}`}>
+                  <span className={`text-[9px] font-medium transition-colors duration-200 ${isActive ? "text-lime" : "text-gray-500"}`}>
                     {item.label}
                   </span>
                 </Link>

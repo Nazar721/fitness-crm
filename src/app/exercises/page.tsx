@@ -36,7 +36,6 @@ export default function ExercisesPage() {
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
-  const [customName, setCustomName] = useState("");
   const [customNameUk, setCustomNameUk] = useState("");
   const [customMuscle, setCustomMuscle] = useState<MuscleGroup>("chest");
   const [customEquipment, setCustomEquipment] = useState<Equipment>("bodyweight");
@@ -68,9 +67,9 @@ export default function ExercisesPage() {
   const hasActiveFilters = selectedMuscle || selectedEquipment || selectedDifficulty;
 
   const handleCreateCustom = () => {
-    if (!customName.trim() || !customNameUk.trim()) return;
+    if (!customNameUk.trim()) return;
     saveCustomExercise({
-      name: customName.trim(),
+      name: customNameUk.trim(),
       nameUk: customNameUk.trim(),
       primaryMuscle: customMuscle,
       secondaryMuscles: [],
@@ -80,7 +79,6 @@ export default function ExercisesPage() {
       isUnilateral: false,
       isTimed: customIsTimed,
     });
-    setCustomName("");
     setCustomNameUk("");
     setCustomMuscle("chest");
     setCustomEquipment("bodyweight");
@@ -443,23 +441,13 @@ export default function ExercisesPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Назва українською *</label>
+                <label className="text-xs text-gray-500 mb-1 block">Назва вправи *</label>
                 <input
                   type="text"
                   placeholder="Напр. Розводка гантелями"
                   value={customNameUk}
                   onChange={(e) => setCustomNameUk(e.target.value)}
                   autoFocus
-                  className="w-full bg-gray-850 border border-gray-800 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-lime transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Назва англійською *</label>
-                <input
-                  type="text"
-                  placeholder="Напр. Dumbbell Flyes"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
                   className="w-full bg-gray-850 border border-gray-800 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-lime transition-colors"
                 />
               </div>
@@ -537,9 +525,9 @@ export default function ExercisesPage() {
               </div>
               <button
                 onClick={handleCreateCustom}
-                disabled={!customName.trim() || !customNameUk.trim()}
+                disabled={!customNameUk.trim()}
                 className={`w-full py-3 rounded-xl font-medium text-sm transition-colors ${
-                  customName.trim() && customNameUk.trim()
+                  customNameUk.trim()
                     ? "bg-lime text-black hover:bg-lime/80"
                     : "bg-white/10 text-gray-600 cursor-not-allowed"
                 }`}

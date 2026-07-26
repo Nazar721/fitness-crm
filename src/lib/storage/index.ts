@@ -12,7 +12,34 @@ const STORAGE_KEYS = {
   BODY_RECORDS: "fittrack_body_records",
   BODY_RECORDS_HISTORY: "fittrack_body_records_history",
   USER_TEMPLATES: "fittrack_user_templates",
+  CUSTOM_RECORD_EXERCISES: "fittrack_custom_record_exercises",
 } as const;
+
+// ===== Custom Record Exercises =====
+
+export interface CustomRecordExercise {
+  id: string;
+  name: string;
+  unit: "reps" | "seconds";
+  icon: string;
+}
+
+export function getCustomRecordExercises(): CustomRecordExercise[] {
+  return get<CustomRecordExercise[]>(STORAGE_KEYS.CUSTOM_RECORD_EXERCISES, []);
+}
+
+export function saveCustomRecordExercise(exercise: Omit<CustomRecordExercise, "id">): string {
+  const exercises = getCustomRecordExercises();
+  const id = `custom_record_${Date.now()}`;
+  exercises.push({ ...exercise, id });
+  set(STORAGE_KEYS.CUSTOM_RECORD_EXERCISES, exercises);
+  return id;
+}
+
+export function deleteCustomRecordExercise(id: string): void {
+  const exercises = getCustomRecordExercises().filter(e => e.id !== id);
+  set(STORAGE_KEYS.CUSTOM_RECORD_EXERCISES, exercises);
+}
 
 // ===== Generic helpers =====
 
