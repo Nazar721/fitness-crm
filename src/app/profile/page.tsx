@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { getProfile, saveProfile, exportAllData, importAllData, downloadJSON, parseImportJSON, clearAllData, getProgress } from "@/lib/storage";
 import { formatWeight, getFitnessLevelFromXP, getFitnessLevelLabel } from "@/lib/utils";
-import { UserProfile } from "@/types";
+import { UserProfile, Measurement } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
@@ -71,8 +71,7 @@ export default function ProfilePage() {
   const handleSave = () => {
     if (!profile) return;
 
-    // Flush measurement strings into editData
-    const mKeys = ["chest", "waist", "hips", "bicep", "calf", "neck"];
+    const mKeys = ["chest", "waist", "hips", "bicep", "calf", "neck", "thigh"];
     const base = editData.measurements?.[0] || { ...measurements };
     let mChanged = false;
     const flushedM = { ...base };
@@ -86,10 +85,26 @@ export default function ProfilePage() {
         }
       }
     }
-    const finalEditData = mChanged
-      ? { ...editData, measurements: [flushedM] }
-      : editData;
 
+    let finalMeasurements = profile.measurements || [];
+    if (mChanged) {
+      const newEntry: Measurement = {
+        ...flushedM,
+        date: new Date().toISOString().split("T")[0],
+        weight: editData.currentWeight ?? profile.currentWeight ?? flushedM.weight,
+      };
+      const existingIdx = finalMeasurements.findIndex(
+        (m) => m.date === newEntry.date
+      );
+      if (existingIdx >= 0) {
+        finalMeasurements = [...finalMeasurements];
+        finalMeasurements[existingIdx] = newEntry;
+      } else {
+        finalMeasurements = [...finalMeasurements, newEntry];
+      }
+    }
+
+    const finalEditData = { ...editData, measurements: finalMeasurements };
     const updated = { ...profile, ...finalEditData };
     saveProfile(updated);
     setProfile(updated);
@@ -144,7 +159,9 @@ export default function ProfilePage() {
     );
   }
 
-  const measurements = profile.measurements?.[0] || { chest: 0, waist: 0, hips: 0, bicep: 0, calf: 0 };
+  const measurements = profile.measurements?.length
+    ? profile.measurements[profile.measurements.length - 1]
+    : { chest: 0, waist: 0, hips: 0, bicep: 0, calf: 0, neck: 0, thigh: 0, date: "" };
   const goalProgress = profile.currentWeight && profile.goalWeight 
     ? Math.round((profile.currentWeight / profile.goalWeight) * 100) 
     : 0;
@@ -171,7 +188,9 @@ export default function ProfilePage() {
             if (editing) {
               handleSave();
             } else {
-              const m = profile.measurements?.[0];
+              const m = profile.measurements?.length
+                ? profile.measurements[profile.measurements.length - 1]
+                : undefined;
               const strings: Record<string, string> = {};
               if (m) {
                 for (const k of ["chest", "waist", "hips", "bicep", "calf", "neck"]) {
@@ -383,7 +402,7 @@ export default function ProfilePage() {
                     onBlur={() => {
                       const val = editStrings[`m_${key}`];
                       const num = val === "" || val === undefined ? undefined : Number(val);
-                      const base = editData.measurements?.[0] || { ...measurements };
+                      const base = editData.measurements?.[0] || { ...measurements, date: new Date().toISOString().split("T")[0] };
                       if (num !== undefined && !isNaN(num)) {
                         setEditData({ ...editData, measurements: [{ ...base, [key]: num }] });
                       }

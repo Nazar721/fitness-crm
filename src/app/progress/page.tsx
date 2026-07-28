@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  Ruler,
 } from "lucide-react";
 import { XPBar } from "@/components/gamification/XPBar";
 import { 
@@ -48,8 +49,11 @@ import {
   getWorkoutHeatmap, 
   getVolumeTrend,
   getRecentPRs,
+  getMeasurementHistory,
+  getProfile,
 } from "@/lib/storage";
 import { formatDuration, formatWeight } from "@/lib/utils";
+import { Measurement } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
@@ -110,6 +114,8 @@ export default function ProgressPage() {
   const [heatmap, setHeatmap] = useState<any[]>([]);
   const [volumeTrend, setVolumeTrend] = useState<any[]>([]);
   const [recentPRs, setRecentPRs] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [currentWeight, setCurrentWeight] = useState<number | undefined>();
 
   useEffect(() => {
     const workouts = getWorkouts();
@@ -127,6 +133,8 @@ export default function ProgressPage() {
     setHeatmap(getWorkoutHeatmap(14));
     setVolumeTrend(getVolumeTrend(12));
     setRecentPRs(getRecentPRs(5));
+    setMeasurements(getMeasurementHistory());
+    setCurrentWeight(getProfile().currentWeight);
     setLoading(false);
   }, []);
 
@@ -383,6 +391,77 @@ export default function ProgressPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Body Measurements Chart */}
+      {measurements.filter((m) => m.date && !isNaN(new Date(m.date).getTime())).length >= 1 && (
+        <motion.div variants={item}>
+          <Card>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-xl bg-lime/10">
+                <Ruler className="w-4 h-4 text-lime" />
+              </div>
+              <h3 className="font-medium text-white">Обміри тіла</h3>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                {(() => {
+                  const valid = measurements.filter((m) => m.date && !isNaN(new Date(m.date).getTime()));
+                  const chartData = valid.map((m, i) => ({
+                    date: new Date(m.date).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }),
+                    "Вага": m.weight ?? (i === valid.length - 1 ? currentWeight : undefined),
+                    "Груди": m.chest || undefined,
+                    "Талія": m.waist || undefined,
+                    "Стегно": m.thigh || undefined,
+                    "Біцепс": m.bicep || undefined,
+                    "Литки": m.calf || undefined,
+                    "Шия": m.neck || undefined,
+                  }));
+                  return (
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                      <XAxis dataKey="date" stroke="#555" fontSize={10} />
+                      <YAxis stroke="#555" fontSize={10} width={35} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1a1a20",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: "12px",
+                          color: "#fff",
+                          fontSize: "12px",
+                        }}
+                        formatter={(value: any, name: any) => [`${value} ${name === "Вага" ? "кг" : "см"}`, name]}
+                      />
+                      <Line type="monotone" dataKey="Вага" stroke="#FFFFFF" strokeWidth={2} dot={{ r: 3, fill: "#FFFFFF" }} connectNulls />
+                      <Line type="monotone" dataKey="Груди" stroke="#39FF14" strokeWidth={2} dot={{ r: 3, fill: "#39FF14" }} connectNulls />
+                      <Line type="monotone" dataKey="Талія" stroke="#9B59B6" strokeWidth={2} dot={{ r: 3, fill: "#9B59B6" }} connectNulls />
+                      <Line type="monotone" dataKey="Стегно" stroke="#E74C3C" strokeWidth={2} dot={{ r: 3, fill: "#E74C3C" }} connectNulls />
+                      <Line type="monotone" dataKey="Біцепс" stroke="#F39C12" strokeWidth={2} dot={{ r: 3, fill: "#F39C12" }} connectNulls />
+                      <Line type="monotone" dataKey="Литки" stroke="#3498DB" strokeWidth={2} dot={{ r: 3, fill: "#3498DB" }} connectNulls />
+                      <Line type="monotone" dataKey="Шия" stroke="#E67E22" strokeWidth={2} dot={{ r: 3, fill: "#E67E22" }} connectNulls />
+                    </LineChart>
+                  );
+                })()}
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-white/[0.04]">
+              {[
+                { label: "Вага", color: "#FFFFFF" },
+                { label: "Груди", color: "#39FF14" },
+                { label: "Талія", color: "#9B59B6" },
+                { label: "Стегно", color: "#E74C3C" },
+                { label: "Біцепс", color: "#F39C12" },
+                { label: "Литки", color: "#3498DB" },
+                { label: "Шия", color: "#E67E22" },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="text-[10px] text-gray-400">{label}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Top Exercises + Recent PRs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">

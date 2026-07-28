@@ -137,6 +137,20 @@ export function saveMeasurements(measurements: Measurement[]): void {
   set(STORAGE_KEYS.MEASUREMENTS, measurements);
 }
 
+export function getMeasurementHistory(): Measurement[] {
+  const profile = getProfile();
+  const fromProfile = profile.measurements || [];
+  const withWeight = fromProfile.map((m, i) => {
+    if (!m.weight && i === fromProfile.length - 1 && profile.currentWeight) {
+      return { ...m, weight: profile.currentWeight };
+    }
+    return m;
+  });
+  return [...withWeight].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+}
+
 // ===== Injuries =====
 
 export function getInjuries(): Injury[] {
